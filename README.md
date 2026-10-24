@@ -1,46 +1,43 @@
 # Jolsel Firm Agent
 
-**Jolsel Firm** — Multi-Agent Solana Trading Firm by [Alitiora Initiative](https://github.com/Alitiora-Initiative).
+**Jolsel Firm** — Multi-agent Solana **memecoin** trading firm by [Alitiora Initiative](https://github.com/Alitiora-Initiative).
 
-17 specialized agents organized into 5 departments that continuously discover, plan, risk-check, vote, execute and audit trades on Solana.
+## Terminal (live)
 
-## Live Website
+Open **`/dashboard`** after deploy.
 
-Deployed on Vercel as **Jolsel Firm**.
+| Feature | Implementation |
+|---------|----------------|
+| Wallet | Phantom / Solflare via Solana Wallet Adapter |
+| Market data | **DexScreener** public API (live Solana pairs) |
+| Charts | Embedded DexScreener + Birdeye link |
+| Swaps | **Jupiter** quote + swap on **Solana mainnet** |
+| Positions / PnL | Local ledger per wallet after confirmed fills |
+| Firm mode | 17-agent style pipeline scores live pairs; you sign txs |
 
-## Departments & Agents
+### How to trade
 
-| Department   | Agents                                      |
-|--------------|---------------------------------------------|
-| Discovery    | Bscoter, Analuszer, CryptoGuru              |
-| Planning     | Forecaster, LongTermPlanner, ShortTermPlanner |
-| Compliance   | Overthinker, Reviewer, MrGrumpy, RiskManager |
-| Executive    | Broker, Judge, Verdicter, Trader            |
-| Audit        | RecordKeeper, RecordReviewer, Teacher       |
+1. Connect wallet (mainnet SOL for fees + size).
+2. Optionally enable **Firm LIVE** to stream agent scoring.
+3. Select a pair → set SOL size → **Buy** → approve in wallet.
+4. Track entry, mark, unrealized PnL on the Positions tab.
 
-## Quick Start (Website)
+> True offline auto-trading would require a server-held trading key. Default is self-custody: the firm proposes, **you** sign.
 
-```bash
-npm install
-npm run dev
+### Optional env
+
+```
+NEXT_PUBLIC_SOLANA_RPC=https://your-helius-or-quicknode-url
 ```
 
-Open http://localhost:3000
+## Agents
 
-## Agent Engine (simulation)
+Discovery · Planning · Compliance · Executive · Audit (see `/` marketing site).
 
-```bash
-npx tsx src/lib/agents/engine.ts
-```
+## Stack
 
-## Technology Plan (Solana · Ubuntu · Rust · Solidity)
-
-See [PLAN.md](./PLAN.md) for the full roadmap.
-
-## Repo
-
-https://github.com/Alitiora-Initiative/Jolsel-Firm-Agent
+Next.js 14 · DexScreener · Jupiter · `@solana/web3.js` · wallet-adapter · Vercel
 
 ## Disclaimer
 
-Not financial advice. Experimental software. Trading can result in total loss of capital.
+Not financial advice. Memecoins can go to zero. You are responsible for every signed transaction.
