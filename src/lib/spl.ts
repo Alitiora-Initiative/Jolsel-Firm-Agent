@@ -21,6 +21,7 @@ export type SplHolding = {
   uiAmount: number;
   tokenAccount: string;
   programId: string;
+  isToken2022: boolean;
 };
 
 /** Parse all SPL + Token-2022 balances for a wallet */
@@ -49,6 +50,7 @@ export async function getSplHoldings(
         uiAmount,
         tokenAccount: pubkey.toBase58(),
         programId: programId.toBase58(),
+        isToken2022: programId.equals(TOKEN_2022_PROGRAM_ID),
       });
     }
   }
@@ -56,25 +58,22 @@ export async function getSplHoldings(
   return holdings.sort((a, b) => b.uiAmount - a.uiAmount);
 }
 
+/** Prefer Token-2022 mint, then classic SPL */
 export async function getTokenDecimals(
   connection: Connection,
   mint: string
 ): Promise<number> {
   if (mint === WSOL_MINT) return 9;
+  const pk = new PublicKey(mint);
   try {
-    const mintInfo = await getMint(connection, new PublicKey(mint));
+    const mintInfo = await getMint(connection, pk, "confirmed", TOKEN_2022_PROGRAM_ID);
     return mintInfo.decimals;
   } catch {
     try {
-      const mintInfo = await getMint(
-        connection,
-        new PublicKey(mint),
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
+      const mintInfo = await getMint(connection, pk, "confirmed", TOKEN_PROGRAM_ID);
       return mintInfo.decimals;
     } catch {
-      return 6; // common meme default
+      return 6;
     }
   }
 }

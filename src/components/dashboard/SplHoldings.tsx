@@ -10,7 +10,6 @@ import {
   USDC_MINT,
   USDT_MINT,
 } from "@/lib/spl";
-import { formatUsd } from "@/lib/dexscreener";
 
 const KNOWN: Record<string, string> = {
   [WSOL_MINT]: "WSOL",
@@ -23,7 +22,6 @@ export function SplHoldings({
   symbolMap,
 }: {
   onSelectMint?: (mint: string) => void;
-  /** optional mint → symbol from open pairs */
   symbolMap?: Record<string, string>;
 }) {
   const { connection } = useConnection();
@@ -59,7 +57,7 @@ export function SplHoldings({
   if (!connected) {
     return (
       <div className="rounded-xl border border-white/10 p-4 text-sm text-slate-500">
-        Connect wallet to read SPL token accounts.
+        Connect wallet to read SPL / Token-2022 accounts.
       </div>
     );
   }
@@ -68,7 +66,7 @@ export function SplHoldings({
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <span className="text-[10px] uppercase tracking-wider text-slate-500">
-          SPL holdings · {holdings.length}
+          SPL + Token-2022 · {holdings.length}
         </span>
         <button
           type="button"
@@ -82,7 +80,7 @@ export function SplHoldings({
       {error && <p className="text-xs text-rose-400">{error}</p>}
       {holdings.length === 0 && !loading && (
         <div className="rounded-xl border border-white/10 p-4 text-sm text-slate-500">
-          No SPL balances (Token Program + Token-2022).
+          No balances found.
         </div>
       )}
       <div className="max-h-[50vh] space-y-1 overflow-y-auto">
@@ -99,7 +97,12 @@ export function SplHoldings({
               className="flex w-full items-center justify-between rounded-lg border border-white/5 bg-slate-900/60 px-3 py-2 text-left hover:bg-white/5"
             >
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium">{sym}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-medium">{sym}</span>
+                  {h.isToken2022 && (
+                    <span className="rounded bg-violet-500/20 px-1 text-[9px] text-violet-300">T22</span>
+                  )}
+                </div>
                 <div className="truncate font-mono text-[10px] text-slate-500">{h.mint}</div>
               </div>
               <div className="text-right">
