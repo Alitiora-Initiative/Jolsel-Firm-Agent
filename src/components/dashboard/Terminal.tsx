@@ -12,11 +12,11 @@ import {
   fromRawAmount,
   formatTokenAmount,
   USDC_MINT,
-  WSOL_MINT,
 } from "@/lib/spl";
 import { LiveChart } from "@/components/dashboard/LiveChart";
 import { WalletConnectButton } from "@/components/dashboard/WalletConnectButton";
 import { SplHoldings, useSplBalance } from "@/components/dashboard/SplHoldings";
+import { Token2022Panel } from "@/components/dashboard/Token2022Panel";
 
 type FirmEvent = { id: string; at: number; agent: string; message: string; level: "info" | "warn" | "success" | "trade" };
 type TradeSide = "buy" | "sell";
@@ -89,7 +89,6 @@ export function Terminal() {
     return () => clearInterval(bal);
   }, [wallet, connection, publicKey]);
 
-  // Resolve SPL decimals for selected mint
   useEffect(() => {
     if (!selectedMint) return;
     getTokenDecimals(connection, selectedMint).then(setTokenDecimals);
@@ -182,7 +181,6 @@ export function Terminal() {
         amountRaw = toRawAmount(ui, 6);
       }
     } else {
-      // sell SPL → SOL
       inputMint = outputMint;
       const balRaw = splBal ? BigInt(splBal.amountRaw) : 0n;
       if (balRaw <= 0n) {
@@ -197,7 +195,7 @@ export function Terminal() {
     }
 
     setBusy(true);
-    setStatus("Fetching Jupiter quote (SPL)…");
+    setStatus("Fetching Jupiter quote (Token / Token-2022)…");
     try {
       const outMint = side === "buy" ? outputMint : SOL;
       const quoteRes = await fetch(
@@ -206,7 +204,7 @@ export function Terminal() {
       const quote = await quoteRes.json();
       if (quote.error) throw new Error(quote.error);
 
-      setStatus("Building SPL swap tx…");
+      setStatus("Building swap tx…");
       const swapRes = await fetch("/api/jupiter/swap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -216,7 +214,7 @@ export function Terminal() {
       if (swap.error) throw new Error(swap.error);
 
       const tx = VersionedTransaction.deserialize(Buffer.from(swap.swapTransaction, "base64"));
-      setStatus("Approve in wallet (mainnet SPL)…");
+      setStatus("Approve in wallet (mainnet)…");
       const signed = await signTransaction(tx);
       setStatus("Sending…");
       const sig = await connection.sendRawTransaction(signed.serialize(), {
@@ -230,10 +228,7 @@ export function Terminal() {
 
       if (side === "buy") {
         const outUi = fromRawAmount(quote.outAmount, tokenDecimals);
-        const costUsd =
-          payWith === "USDC"
-            ? parseFloat(buySol)
-            : parseFloat(buySol) * 150;
+        const costUsd = payWith === "USDC" ? parseFloat(buySol) : parseFloat(buySol) * 150;
         const pos: Position = {
           id: sig,
           mint: selected.baseToken.address,
@@ -254,9 +249,8 @@ export function Terminal() {
         const next = [pos, ...positions];
         setPositions(next);
         savePositions(wallet, next);
-        pushEvent("Trader", `BUY SPL ${selected.baseToken.symbol} · ${formatTokenAmount(outUi, tokenDecimals)}`, "trade");
+        pushEvent("Trader", `BUY ${selected.baseToken.symbol} · ${formatTokenAmount(outUi, tokenDecimals)}`, "trade");
       } else {
-        // close / reduce positions for this mint
         const soldUi = fromRawAmount(amountRaw.toString(), tokenDecimals);
         const next = positions.map((p) => {
           if (p.mint !== selected.baseToken.address || p.status !== "open") return p;
@@ -274,7 +268,7 @@ export function Terminal() {
         });
         setPositions(next);
         savePositions(wallet, next);
-        pushEvent("Trader", `SELL SPL ${selected.baseToken.symbol} · ${sellPct}%`, "trade");
+        pushEvent("Trader", `SELL ${selected.baseToken.symbol} · ${sellPct}%`, "trade");
       }
 
       setStatus(`Filled. https://solscan.io/tx/${sig}`);
@@ -295,7 +289,7 @@ export function Terminal() {
             <a href="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#14F195] to-[#9945FF] text-xs font-bold text-slate-950">JF</a>
             <div>
               <div className="text-sm font-semibold">Jolsel Firm Terminal</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">SPL tokens · Token-2022 · Jupiter mainnet</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">Token-2022 extensions · SPL · Jupiter</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -319,7 +313,7 @@ export function Terminal() {
 
       {!connected && (
         <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-200">
-          Connect wallet to read SPL balances and trade on mainnet.
+          Connect wallet to read Token-2022 / SPL balances and trade on mainnet.
         </div>
       )}
 
@@ -423,8 +417,8 @@ export function Terminal() {
         <aside className="space-y-3 lg:col-span-3">
           <div className="rounded-xl border border-white/10 bg-slate-900/70 p-4">
             <div className="mb-3 flex gap-1 rounded-lg border border-white/10 p-0.5 text-xs">
-              <button type="button" onClick={() => setSide("buy")} className={`flex-1 rounded-md py-1.5 font-semibold ${side === "buy" ? "bg-[#14F195] text-slate-950" : "text-slate-400"}`}>Buy SPL</button>
-              <button type="button" onClick={() => setSide("sell")} className={`flex-1 rounded-md py-1.5 font-semibold ${side === "sell" ? "bg-rose-500 text-white" : "text-slate-400"}`}>Sell SPL</button>
+              <button type="button" onClick={() => setSide("buy")} className={`flex-1 rounded-md py-1.5 font-semibold ${side === "buy" ? "bg-[#14F195] text-slate-950" : "text-slate-400"}`}>Buy</button>
+              <button type="button" onClick={() => setSide("sell")} className={`flex-1 rounded-md py-1.5 font-semibold ${side === "sell" ? "bg-rose-500 text-white" : "text-slate-400"}`}>Sell</button>
             </div>
 
             {selected && (
@@ -436,6 +430,7 @@ export function Terminal() {
                   <>
                     <span className="mx-1">·</span>
                     bal {formatTokenAmount(splBal.uiAmount, splBal.decimals)}
+                    {splBal.isToken2022 && <span className="ml-1 text-violet-300">T22</span>}
                   </>
                 )}
               </div>
@@ -462,14 +457,12 @@ export function Terminal() {
               </>
             ) : (
               <>
-                <label className="text-[11px] text-slate-400">Sell % of SPL balance</label>
+                <label className="text-[11px] text-slate-400">Sell % of balance</label>
                 <input type="range" min={1} max={100} value={sellPct} onChange={(e) => setSellPct(Number(e.target.value))} className="mt-2 w-full" />
                 <div className="mt-1 flex justify-between text-xs text-slate-400">
                   <span>{sellPct}%</span>
                   <span>
-                    {splBal
-                      ? formatTokenAmount((splBal.uiAmount * sellPct) / 100, splBal.decimals)
-                      : "0"}{" "}
+                    {splBal ? formatTokenAmount((splBal.uiAmount * sellPct) / 100, splBal.decimals) : "0"}{" "}
                     {selected?.baseToken.symbol}
                   </span>
                 </div>
@@ -494,17 +487,12 @@ export function Terminal() {
                   : "bg-rose-500 text-white"
               }`}
             >
-              {busy
-                ? "Executing…"
-                : connected
-                  ? `${side === "buy" ? "Buy" : "Sell"} ${selected?.baseToken.symbol || "SPL"}`
-                  : "Connect wallet"}
+              {busy ? "Executing…" : connected ? `${side === "buy" ? "Buy" : "Sell"} ${selected?.baseToken.symbol || "token"}` : "Connect wallet"}
             </button>
             {status && <p className="mt-2 break-all text-[11px] text-slate-400">{status}</p>}
-            <p className="mt-3 text-[10px] leading-relaxed text-slate-600">
-              Jupiter routes any SPL / Token-2022 mint. Buys create/use associated token accounts automatically. You sign every tx.
-            </p>
           </div>
+
+          <Token2022Panel mint={selectedMint} />
         </aside>
       </div>
     </div>
