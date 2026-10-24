@@ -7,7 +7,8 @@ export { SOL };
 export async function getQuote(params: {
   inputMint: string;
   outputMint: string;
-  amount: number;
+  /** Raw amount in smallest units (lamports / SPL base units) */
+  amount: number | string;
   slippageBps?: number;
 }) {
   const sp = new URLSearchParams({

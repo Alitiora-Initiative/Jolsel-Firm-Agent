@@ -5,7 +5,11 @@ export type Position = {
   name: string;
   pairAddress?: string;
   entryPriceUsd: number;
+  /** Human-readable token amount (respects decimals) */
   amountTokens: number;
+  /** Raw integer amount as string (SPL base units) */
+  amountRaw?: string;
+  decimals?: number;
   costUsd: number;
   openedAt: number;
   side: "long";
@@ -14,15 +18,20 @@ export type Position = {
   closedAt?: number;
   realizedPnlUsd?: number;
   txSig?: string;
+  /** Buy paid with SOL or USDC etc */
+  inputMint?: string;
 };
 
-const KEY = "jolsel_positions_v1";
+const KEY = "jolsel_positions_v2";
 
 export function loadPositions(wallet: string): Position[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(`${KEY}:${wallet}`);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) return JSON.parse(raw);
+    // migrate v1
+    const v1 = localStorage.getItem(`jolsel_positions_v1:${wallet}`);
+    return v1 ? JSON.parse(v1) : [];
   } catch {
     return [];
   }
