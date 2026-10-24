@@ -1,21 +1,26 @@
 {
   "name": "jolsel-firm-agent",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Jolsel Firm — Multi-Agent Solana Trading Firm (17+ specialized agents)",
+  "description": "Jolsel Firm — Multi-Agent Solana Memecoin Trading Terminal",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "agent": "tsx src/lib/agents/engine.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.454.0"
+    "lucide-react": "^0.454.0",
+    "@solana/web3.js": "^1.95.4",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "bs58": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.16.11",
