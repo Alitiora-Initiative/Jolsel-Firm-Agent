@@ -55,8 +55,11 @@ function VaultPage() {
       <section className="hud mt-6 p-5">
         <h2 className="text-lg font-semibold">Deposit is off</h2>
         <p className="mt-2 text-sm text-[var(--color-muted)]">
-          There is no deployed program id. This button cannot move SOL. Sending the open fee to
-          a personal wallet and calling it a vault would be false, so that transfer is not built.
+          The program that would move funds is Rust, in{" "}
+          <span className="font-mono text-[var(--color-ink)]">programs/jolsel-vault</span>. It is a
+          Solana program, not a Solidity contract — Solana does not run the EVM. Open, deposit, and
+          withdraw are real instructions. Withdrawal requires the depositor's signature. There
+          is no admin drain. It has no mainnet program id yet, so this button cannot move SOL.
         </p>
         <button
           type="button"

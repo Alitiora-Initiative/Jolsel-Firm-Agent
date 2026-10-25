@@ -144,41 +144,29 @@ export function GravityStage() {
       }
 
       if (!reduce) {
-        const hop = 380;
-        const sweep = (now / hop) % AGENTS.length;
-        const i0 = Math.floor(sweep);
-        const i1 = (i0 + 1) % AGENTS.length;
-        const t = sweep - i0;
-        const from = pos(i0, w, h);
-        const to = pos(i1, w, h);
-        const x = from.x + (to.x - from.x) * t;
-        const y = from.y + (to.y - from.y) * t;
-        el("line", {
-          x1: String(cx),
-          y1: String(cy),
-          x2: String(x),
-          y2: String(y),
-          stroke: "#1d4ed8",
-          "stroke-width": "2.4",
-          opacity: "0.9",
-        });
-        el("line", {
-          x1: String(from.x),
-          y1: String(from.y),
-          x2: String(to.x),
-          y2: String(to.y),
-          stroke: "#93c5fd",
-          "stroke-width": "1.6",
-        });
-        el("circle", { cx: String(x), cy: String(y), r: "5", fill: "#dbeafe" });
-        el("circle", {
-          cx: String(to.x),
-          cy: String(to.y),
-          r: "10",
-          fill: "none",
-          stroke: "#1d4fff",
-          "stroke-width": "2",
-        });
+        const period = 2200;
+        for (let i = 0; i < AGENTS.length; i++) {
+          const phase = ((now + (i * period) / AGENTS.length) % period) / period;
+          const inbound = phase < 0.5;
+          const t = inbound ? phase * 2 : (phase - 0.5) * 2;
+          const node = pos(i, w, h);
+          const head = inbound ? t : 1 - t;
+          const tail = Math.max(0, head - 0.07);
+          const hx = node.x + (cx - node.x) * head;
+          const hy = node.y + (cy - node.y) * head;
+          const tx = node.x + (cx - node.x) * tail;
+          const ty = node.y + (cy - node.y) * tail;
+          el("line", {
+            x1: String(tx),
+            y1: String(ty),
+            x2: String(hx),
+            y2: String(hy),
+            stroke: "#60a5fa",
+            "stroke-width": "1.4",
+            "stroke-linecap": "round",
+          });
+          el("circle", { cx: String(hx), cy: String(hy), r: "2.1", fill: "#dbeafe" });
+        }
       }
 
       const life = 1600;

@@ -1,0 +1,12 @@
+[package]
+name = "jolsel-vault"
+version = "0.1.0"
+edition = "2021"
+description = "Jolsel Firm vault. Users keep withdrawal authority. No admin drain."
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+solana-program = "2.3.0"
