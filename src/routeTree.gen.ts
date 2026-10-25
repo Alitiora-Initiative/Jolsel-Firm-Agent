@@ -11,8 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as CoinRouteImport } from './routes/coin'
+import { Route as CoreRouteImport } from './routes/core'
 import { Route as LedgerRouteImport } from './routes/ledger'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as TechRouteImport } from './routes/tech'
 import { Route as TerminalRouteImport } from './routes/terminal'
+import { Route as TreasuryRouteImport } from './routes/treasury'
+import { Route as VaultRouteImport } from './routes/vault'
+import { Route as ApiChainRouteImport } from './routes/api/chain'
 import { Route as ApiMarketRouteImport } from './routes/api/market'
 import { Route as ApiQuoteRouteImport } from './routes/api/quote'
 
@@ -26,14 +34,54 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoinRoute = CoinRouteImport.update({
+  id: '/coin',
+  path: '/coin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoreRoute = CoreRouteImport.update({
+  id: '/core',
+  path: '/core',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LedgerRoute = LedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechRoute = TechRouteImport.update({
+  id: '/tech',
+  path: '/tech',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TerminalRoute = TerminalRouteImport.update({
   id: '/terminal',
   path: '/terminal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TreasuryRoute = TreasuryRouteImport.update({
+  id: '/treasury',
+  path: '/treasury',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VaultRoute = VaultRouteImport.update({
+  id: '/vault',
+  path: '/vault',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChainRoute = ApiChainRouteImport.update({
+  id: '/api/chain',
+  path: '/api/chain',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMarketRoute = ApiMarketRouteImport.update({
@@ -50,16 +98,32 @@ const ApiQuoteRoute = ApiQuoteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/coin': typeof CoinRoute
+  '/core': typeof CoreRoute
   '/ledger': typeof LedgerRoute
+  '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/tech': typeof TechRoute
   '/terminal': typeof TerminalRoute
+  '/treasury': typeof TreasuryRoute
+  '/vault': typeof VaultRoute
+  '/api/chain': typeof ApiChainRoute
   '/api/market': typeof ApiMarketRoute
   '/api/quote': typeof ApiQuoteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/coin': typeof CoinRoute
+  '/core': typeof CoreRoute
   '/ledger': typeof LedgerRoute
+  '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/tech': typeof TechRoute
   '/terminal': typeof TerminalRoute
+  '/treasury': typeof TreasuryRoute
+  '/vault': typeof VaultRoute
+  '/api/chain': typeof ApiChainRoute
   '/api/market': typeof ApiMarketRoute
   '/api/quote': typeof ApiQuoteRoute
 }
@@ -67,23 +131,66 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/coin': typeof CoinRoute
+  '/core': typeof CoreRoute
   '/ledger': typeof LedgerRoute
+  '/profile': typeof ProfileRoute
+  '/reviews': typeof ReviewsRoute
+  '/tech': typeof TechRoute
   '/terminal': typeof TerminalRoute
+  '/treasury': typeof TreasuryRoute
+  '/vault': typeof VaultRoute
+  '/api/chain': typeof ApiChainRoute
   '/api/market': typeof ApiMarketRoute
   '/api/quote': typeof ApiQuoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/agents' | '/ledger' | '/terminal' | '/api/market' | '/api/quote'
+    | '/'
+    | '/agents'
+    | '/coin'
+    | '/core'
+    | '/ledger'
+    | '/profile'
+    | '/reviews'
+    | '/tech'
+    | '/terminal'
+    | '/treasury'
+    | '/vault'
+    | '/api/chain'
+    | '/api/market'
+    | '/api/quote'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agents' | '/ledger' | '/terminal' | '/api/market' | '/api/quote'
+  to:
+    | '/'
+    | '/agents'
+    | '/coin'
+    | '/core'
+    | '/ledger'
+    | '/profile'
+    | '/reviews'
+    | '/tech'
+    | '/terminal'
+    | '/treasury'
+    | '/vault'
+    | '/api/chain'
+    | '/api/market'
+    | '/api/quote'
   id:
     | '__root__'
     | '/'
     | '/agents'
+    | '/coin'
+    | '/core'
     | '/ledger'
+    | '/profile'
+    | '/reviews'
+    | '/tech'
     | '/terminal'
+    | '/treasury'
+    | '/vault'
+    | '/api/chain'
     | '/api/market'
     | '/api/quote'
   fileRoutesById: FileRoutesById
@@ -91,8 +198,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentsRoute: typeof AgentsRoute
+  CoinRoute: typeof CoinRoute
+  CoreRoute: typeof CoreRoute
   LedgerRoute: typeof LedgerRoute
+  ProfileRoute: typeof ProfileRoute
+  ReviewsRoute: typeof ReviewsRoute
+  TechRoute: typeof TechRoute
   TerminalRoute: typeof TerminalRoute
+  TreasuryRoute: typeof TreasuryRoute
+  VaultRoute: typeof VaultRoute
+  ApiChainRoute: typeof ApiChainRoute
   ApiMarketRoute: typeof ApiMarketRoute
   ApiQuoteRoute: typeof ApiQuoteRoute
 }
@@ -113,6 +228,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coin': {
+      id: '/coin'
+      path: '/coin'
+      fullPath: '/coin'
+      preLoaderRoute: typeof CoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/core': {
+      id: '/core'
+      path: '/core'
+      fullPath: '/core'
+      preLoaderRoute: typeof CoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ledger': {
       id: '/ledger'
       path: '/ledger'
@@ -120,11 +249,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tech': {
+      id: '/tech'
+      path: '/tech'
+      fullPath: '/tech'
+      preLoaderRoute: typeof TechRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terminal': {
       id: '/terminal'
       path: '/terminal'
       fullPath: '/terminal'
       preLoaderRoute: typeof TerminalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/treasury': {
+      id: '/treasury'
+      path: '/treasury'
+      fullPath: '/treasury'
+      preLoaderRoute: typeof TreasuryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vault': {
+      id: '/vault'
+      path: '/vault'
+      fullPath: '/vault'
+      preLoaderRoute: typeof VaultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chain': {
+      id: '/api/chain'
+      path: '/api/chain'
+      fullPath: '/api/chain'
+      preLoaderRoute: typeof ApiChainRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/market': {
@@ -147,8 +318,16 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentsRoute: AgentsRoute,
+  CoinRoute: CoinRoute,
+  CoreRoute: CoreRoute,
   LedgerRoute: LedgerRoute,
+  ProfileRoute: ProfileRoute,
+  ReviewsRoute: ReviewsRoute,
+  TechRoute: TechRoute,
   TerminalRoute: TerminalRoute,
+  TreasuryRoute: TreasuryRoute,
+  VaultRoute: VaultRoute,
+  ApiChainRoute: ApiChainRoute,
   ApiMarketRoute: ApiMarketRoute,
   ApiQuoteRoute: ApiQuoteRoute,
 }

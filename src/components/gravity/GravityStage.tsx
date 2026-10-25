@@ -124,8 +124,8 @@ export function GravityStage() {
           rx: String(ring + k * 12),
           ry: String((ring + k * 12) * 0.86),
           fill: "none",
-          stroke: k === 1 ? "rgba(255,120,50,0.4)" : "rgba(80,170,255,0.25)",
-          "stroke-width": k === 1 ? "6" : "2",
+          stroke: k === 1 ? "rgba(255,120,50,0.45)" : "rgba(80,170,255,0.25)",
+          "stroke-width": k === 1 ? "8" : "2",
           transform: `rotate(${((spin * (k === 1 ? 40 : -24)) * 180) / Math.PI} ${cx} ${cy})`,
         });
       }
@@ -143,6 +143,44 @@ export function GravityStage() {
         });
       }
 
+      if (!reduce) {
+        const hop = 380;
+        const sweep = (now / hop) % AGENTS.length;
+        const i0 = Math.floor(sweep);
+        const i1 = (i0 + 1) % AGENTS.length;
+        const t = sweep - i0;
+        const from = pos(i0, w, h);
+        const to = pos(i1, w, h);
+        const x = from.x + (to.x - from.x) * t;
+        const y = from.y + (to.y - from.y) * t;
+        el("line", {
+          x1: String(cx),
+          y1: String(cy),
+          x2: String(x),
+          y2: String(y),
+          stroke: "#1d4ed8",
+          "stroke-width": "2.4",
+          opacity: "0.9",
+        });
+        el("line", {
+          x1: String(from.x),
+          y1: String(from.y),
+          x2: String(to.x),
+          y2: String(to.y),
+          stroke: "#93c5fd",
+          "stroke-width": "1.6",
+        });
+        el("circle", { cx: String(x), cy: String(y), r: "5", fill: "#dbeafe" });
+        el("circle", {
+          cx: String(to.x),
+          cy: String(to.y),
+          r: "10",
+          fill: "none",
+          stroke: "#1d4fff",
+          "stroke-width": "2",
+        });
+      }
+
       const life = 1600;
       packets.current = packets.current.filter((p) => now - p.born < life);
       for (const p of packets.current) {
@@ -154,12 +192,20 @@ export function GravityStage() {
         const cpy = cy * 0.35 + (a.y + b.y) * 0.325;
         const x = (1 - ease) ** 2 * a.x + 2 * (1 - ease) * ease * cpx + ease ** 2 * b.x;
         const y = (1 - ease) ** 2 * a.y + 2 * (1 - ease) * ease * cpy + ease ** 2 * b.y;
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const nx = b.y - a.y;
+        const ny = a.x - b.x;
+        const len = Math.hypot(nx, ny) || 1;
+        const jag = 10 * Math.sin(p.born / 80);
+        const jx = mx + (nx / len) * jag;
+        const jy = my + (ny / len) * jag;
         el("path", {
-          d: `M ${a.x} ${a.y} Q ${cpx} ${cpy} ${b.x} ${b.y}`,
+          d: `M ${a.x} ${a.y} L ${jx} ${jy} L ${b.x} ${b.y}`,
           fill: "none",
           stroke: KIND_COLOR[p.kind],
-          "stroke-width": "1.2",
-          opacity: "0.4",
+          "stroke-width": "1.4",
+          opacity: "0.55",
         });
         el("circle", {
           cx: String(x),
@@ -226,11 +272,12 @@ export function GravityStage() {
             style={{ left: `${n.left}%`, top: `${n.top}%` }}
           >
             <div
-              className="mx-auto grid h-8 w-8 place-items-center rounded-full border bg-[var(--color-void)] sm:h-11 sm:w-11"
+              className="desk-hit mx-auto grid h-8 w-8 place-items-center rounded-full border bg-[var(--color-void)] sm:h-11 sm:w-11"
               style={{
+                ["--i" as string]: String(n.i),
                 borderColor: color,
                 color,
-                boxShadow: hot ? `0 0 16px ${color}` : "none",
+                boxShadow: hot ? `0 0 16px ${color}` : undefined,
               }}
             >
               <AgentIcon name={n.icon} />

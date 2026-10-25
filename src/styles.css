@@ -56,3 +56,19 @@
   text-transform: uppercase;
   color: var(--color-muted);
 }
+
+@keyframes desk-hit {
+  0%,
+  72%,
+  100% {
+    box-shadow: 0 0 0 transparent;
+  }
+  80% {
+    box-shadow: 0 0 18px 4px #1d4fff;
+  }
+}
+
+@utility desk-hit {
+  animation: desk-hit 2.55s linear infinite;
+  animation-delay: calc(var(--i) * 0.15s);
+}
