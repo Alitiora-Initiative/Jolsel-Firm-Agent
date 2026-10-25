@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Rajdhani", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-void: #03060f;
+  --color-ink: #d7e7f5;
+  --color-muted: #7f93ab;
+  --color-line: #1c3148;
+  --color-glass: #07111fcc;
+  --color-cyan: #3ee0ff;
+  --color-violet: #a78bfa;
+  --color-mint: #3dffb0;
+  --color-amber: #ffb020;
+  --color-ember: #ff6a3d;
+  --color-rose: #ff4d6a;
+  --radius-hud: 0.75rem;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    letter-spacing: 0.01em;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-cyan) 35%, transparent);
+  }
+}
+
+@utility hud {
+  background: color-mix(in srgb, var(--color-glass) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-cyan) 22%, var(--color-line));
+  border-radius: var(--radius-hud);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 4%, transparent),
+    0 0 24px color-mix(in srgb, var(--color-cyan) 8%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+@utility label-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}

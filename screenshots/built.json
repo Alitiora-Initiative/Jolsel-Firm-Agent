@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Jolsel Firm",
+      "hasCanvas": false,
+      "bodyTextLen": 2199,
+      "bodyTextHash": "1c2b885e3100506476b54f0f7c4038665ac31d503e35a012d39e78497c618530",
+      "bodyTextPrefix": "JOLSEL FIRM SOLANA MAINNET · 17 DESKS Core Terminal Desks Ledger",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Jolsel Firm",
+      "hasCanvas": false,
+      "bodyTextLen": 1683,
+      "bodyTextHash": "32eab745a4f6a464f8af632f9603dca0139f964c121fa36a550036cc8f853a00",
+      "bodyTextPrefix": "JOLSEL FIRM SOLANA MAINNET · 17 DESKS Core Terminal Desks Ledger",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
