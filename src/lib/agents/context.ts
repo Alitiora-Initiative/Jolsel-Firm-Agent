@@ -1,11 +1,21 @@
 export type AssetClass = "MEME_COIN" | "TOKENIZED_STOCK" | "PERPETUAL";
 
+export interface LivePair {
+  symbol: string;
+  mint: string;
+  priceUsd: number;
+  liquidityUsd: number;
+  volumeH24: number;
+  priceChangeH1: number;
+  txnsH1: number;
+}
+
 export interface CorporateContext {
   timestamp: number;
   walletBalanceUSDT: number;
   activeAssetClass: AssetClass;
-  scoutedTokens: any[];
-  selectedToken: any | null;
+  scoutedTokens: LivePair[];
+  selectedToken: LivePair | null;
   customIndicatorsScore: number;
   socialSentimentScore: number;
   isWorthIt: boolean;
@@ -16,12 +26,15 @@ export interface CorporateContext {
   slippageMax: number;
   boardroomVotes: { [agentName: string]: string };
   executionApproved: boolean;
+  learningBias: number;
+  managedMints: string[];
+  events: string[];
 }
 
 export function createInitialContext(): CorporateContext {
   return {
     timestamp: Date.now(),
-    walletBalanceUSDT: 1.8,
+    walletBalanceUSDT: 0,
     activeAssetClass: "MEME_COIN",
     scoutedTokens: [],
     selectedToken: null,
@@ -35,5 +48,8 @@ export function createInitialContext(): CorporateContext {
     slippageMax: 1.5,
     boardroomVotes: {},
     executionApproved: false,
+    learningBias: 0,
+    managedMints: [],
+    events: [],
   };
 }

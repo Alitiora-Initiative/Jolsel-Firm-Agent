@@ -17,10 +17,15 @@ import { LiveChart } from "@/components/dashboard/LiveChart";
 import { WalletConnectButton } from "@/components/dashboard/WalletConnectButton";
 import { SplHoldings, useSplBalance } from "@/components/dashboard/SplHoldings";
 import { Token2022Panel } from "@/components/dashboard/Token2022Panel";
+import { loadRules, toggleManagedMint, type UserRules } from "@/lib/profile";
+import { TradingFirmEngine } from "@/lib/agents/engine";
+import type { LivePair } from "@/lib/agents/context";
 
 type FirmEvent = { id: string; at: number; agent: string; message: string; level: "info" | "warn" | "success" | "trade" };
 type TradeSide = "buy" | "sell";
 type PayWith = "SOL" | "USDC";
+
+const firmEngine = new TradingFirmEngine();
 
 export function Terminal() {
   const { connection } = useConnection();
@@ -42,8 +47,9 @@ export function Terminal() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [firmOn, setFirmOn] = useState(false);
   const [events, setEvents] = useState<FirmEvent[]>([]);
-  const [tab, setTab] = useState<"live" | "positions" | "holdings" | "firm">("live");
+  const [tab, setTab] = useState<"live" | "positions" | "holdings" | "firm" | "manage">("live");
   const [tokenDecimals, setTokenDecimals] = useState(6);
+  const [rules, setRules] = useState<UserRules | null>(null);
 
   const selectedMint = selected?.baseToken.address;
   const splBal = useSplBalance(selectedMint);
@@ -71,7 +77,7 @@ export function Terminal() {
 
   useEffect(() => {
     refreshMarket();
-    const t = setInterval(refreshMarket, 20000);
+    const t = setInterval(refreshMarket, 5 * 60 * 1000);
     return () => clearInterval(t);
   }, [refreshMarket]);
 
@@ -82,6 +88,7 @@ export function Terminal() {
       return;
     }
     setPositions(loadPositions(wallet));
+    setRules(loadRules(wallet));
     connection.getBalance(publicKey!).then((l) => setSolBalance(l / 1e9));
     const bal = setInterval(() => {
       connection.getBalance(publicKey!).then((l) => setSolBalance(l / 1e9));
@@ -94,30 +101,44 @@ export function Terminal() {
     getTokenDecimals(connection, selectedMint).then(setTokenDecimals);
   }, [connection, selectedMint]);
 
+  // Real live agent pipeline
   useEffect(() => {
     if (!firmOn || !pairs.length) return;
-    const tick = () => {
-      const top = [...pairs]
-        .filter((p) => (p.priceChange?.h1 || 0) > 8 && (p.liquidity?.usd || 0) > 20000)
-        .slice(0, 3);
-      if (!top.length) {
-        pushEvent("Bscoter", "No high-momentum pairs cleared liquidity floor.", "info");
-        return;
-      }
-      const pick = top[Math.floor(Math.random() * top.length)];
-      const score = Math.min(98, 70 + Math.abs(pick.priceChange?.h1 || 0));
-      pushEvent("Analuszer", `${pick.baseToken.symbol} score ${score.toFixed(0)}`, "info");
-      if (score >= 80) {
-        pushEvent("Verdicter", `Mandate SIGNED for ${pick.baseToken.symbol}`, "trade");
-        setSelected(pick);
-      } else {
-        pushEvent("Judge", `${pick.baseToken.symbol} below gate`, "warn");
+
+    const run = async () => {
+      const livePairs: LivePair[] = pairs.slice(0, 20).map((p) => ({
+        symbol: p.baseToken.symbol,
+        mint: p.baseToken.address,
+        priceUsd: parseFloat(p.priceUsd || "0") || 0,
+        liquidityUsd: p.liquidity?.usd || 0,
+        volumeH24: p.volume?.h24 || 0,
+        priceChangeH1: p.priceChange?.h1 || 0,
+        txnsH1: (p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0),
+      }));
+
+      const managed = rules?.managedMints || [];
+      const walletUsd = (solBalance || 0) * 150; // rough SOL price for sizing
+
+      try {
+        const result = await firmEngine.runOnce(livePairs, managed, walletUsd);
+        for (const msg of result.events || []) {
+          const agent = msg.startsWith("[") ? msg.slice(1, msg.indexOf("]")) : "Firm";
+          const level = msg.includes("VETO") || msg.includes("below") ? "warn" : msg.includes("Proposal") ? "trade" : "info";
+          pushEvent(agent, msg, level as any);
+        }
+        if (result.selectedToken && result.executionApproved) {
+          const match = pairs.find((p) => p.baseToken.address === result.selectedToken!.mint);
+          if (match) setSelected(match);
+        }
+      } catch (err: any) {
+        pushEvent("System", `Engine error: ${err?.message}`, "warn");
       }
     };
-    tick();
-    const id = setInterval(tick, 45000);
+
+    run();
+    const id = setInterval(run, 60000); // every 60s when Firm LIVE
     return () => clearInterval(id);
-  }, [firmOn, pairs, pushEvent]);
+  }, [firmOn, pairs, rules, solBalance, pushEvent]);
 
   const onChartTick = useCallback((pair: DexPair) => {
     setPairs((prev) => prev.map((p) => (p.pairAddress === pair.pairAddress ? pair : p)));
@@ -289,7 +310,7 @@ export function Terminal() {
             <a href="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#14F195] to-[#9945FF] text-xs font-bold text-slate-950">JF</a>
             <div>
               <div className="text-sm font-semibold">Jolsel Firm Terminal</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">Token-2022 extensions · SPL · Jupiter</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">Token-2022 · SPL · Jupiter · Live Agents</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -313,7 +334,7 @@ export function Terminal() {
 
       {!connected && (
         <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-200">
-          Connect wallet to read Token-2022 / SPL balances and trade on mainnet.
+          Connect wallet to read balances and trade on mainnet.
         </div>
       )}
 
@@ -324,7 +345,7 @@ export function Terminal() {
             <button type="button" onClick={search} className="rounded-lg bg-white/10 px-3 text-sm hover:bg-white/15">Go</button>
           </div>
           <div className="flex flex-wrap gap-1 text-xs">
-            {(["live", "holdings", "positions", "firm"] as const).map((t) => (
+            {(["live", "holdings", "positions", "firm", "manage"] as const).map((t) => (
               <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-md px-2.5 py-1 capitalize ${tab === t ? "bg-[#14F195]/20 text-[#14F195]" : "text-slate-400"}`}>{t}</button>
             ))}
           </div>
@@ -399,13 +420,33 @@ export function Terminal() {
 
           {tab === "firm" && (
             <div className="max-h-[70vh] space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/60 p-2">
-              {events.length === 0 && <div className="p-3 text-sm text-slate-500">Enable Firm LIVE.</div>}
+              {events.length === 0 && <div className="p-3 text-sm text-slate-500">Enable Firm LIVE to run real agents.</div>}
               {events.map((ev) => (
                 <div key={ev.id} className="border-b border-white/5 px-2 py-2 text-xs">
                   <span className="font-mono text-[#14F195]">{ev.agent}</span>
                   <p className="mt-0.5 text-slate-400">{ev.message}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {tab === "manage" && (
+            <div className="max-h-[70vh] space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/60 p-3">
+              <div className="text-xs font-semibold text-[#14F195] mb-2">Firm Manage My Bags</div>
+              <p className="text-[11px] text-slate-400 mb-3">Select holdings for the firm to monitor. Rules: SL {rules?.stopLossPct ?? -20}% · TP {rules?.takeProfitPct ?? 80}% · partial {rules?.partialTakePct ?? 40}%</p>
+              <SplHoldings
+                symbolMap={symbolMap}
+                onSelectMint={(mint) => {
+                  if (wallet) {
+                    const next = toggleManagedMint(wallet, mint);
+                    setRules(next);
+                    pushEvent("RiskManager", next.managedMints.includes(mint) ? `Now managing ${mint.slice(0,6)}…` : `Stopped managing ${mint.slice(0,6)}…`, "info");
+                  }
+                }}
+              />
+              <div className="mt-3 text-[10px] text-slate-500">
+                Managed: {rules?.managedMints.length || 0} tokens. Real agents score them on each Firm tick.
+              </div>
             </div>
           )}
         </aside>
@@ -429,67 +470,34 @@ export function Terminal() {
                 {splBal && (
                   <>
                     <span className="mx-1">·</span>
-                    bal {formatTokenAmount(splBal.uiAmount, splBal.decimals)}
-                    {splBal.isToken2022 && <span className="ml-1 text-violet-300">T22</span>}
+                    Bal {formatTokenAmount(splBal.uiAmount, tokenDecimals)}
                   </>
                 )}
               </div>
             )}
 
-            {!connected && (
-              <div className="mb-3 flex justify-center"><WalletConnectButton /></div>
-            )}
-
             {side === "buy" ? (
               <>
                 <div className="mb-2 flex gap-1 text-xs">
-                  {(["SOL", "USDC"] as const).map((p) => (
-                    <button key={p} type="button" onClick={() => setPayWith(p)} className={`flex-1 rounded-md border py-1 ${payWith === p ? "border-[#14F195]/50 text-[#14F195]" : "border-white/10 text-slate-400"}`}>{p}</button>
-                  ))}
+                  <button type="button" onClick={() => setPayWith("SOL")} className={`rounded px-2 py-1 ${payWith === "SOL" ? "bg-white/15" : ""}`}>SOL</button>
+                  <button type="button" onClick={() => setPayWith("USDC")} className={`rounded px-2 py-1 ${payWith === "USDC" ? "bg-white/15" : ""}`}>USDC</button>
                 </div>
-                <label className="text-[11px] text-slate-400">Amount ({payWith})</label>
-                <input value={buySol} onChange={(e) => setBuySol(e.target.value)} className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 font-mono text-sm outline-none focus:border-[#14F195]/50" />
-                <div className="mt-2 flex gap-1">
-                  {(payWith === "SOL" ? ["0.01", "0.05", "0.1", "0.25"] : ["10", "25", "50", "100"]).map((v) => (
-                    <button key={v} type="button" onClick={() => setBuySol(v)} className="flex-1 rounded-md border border-white/10 py-1 text-[11px] text-slate-400 hover:bg-white/5">{v}</button>
-                  ))}
-                </div>
+                <input value={buySol} onChange={(e) => setBuySol(e.target.value)} className="mb-2 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 font-mono text-sm outline-none" placeholder="Amount" />
               </>
             ) : (
               <>
-                <label className="text-[11px] text-slate-400">Sell % of balance</label>
-                <input type="range" min={1} max={100} value={sellPct} onChange={(e) => setSellPct(Number(e.target.value))} className="mt-2 w-full" />
-                <div className="mt-1 flex justify-between text-xs text-slate-400">
-                  <span>{sellPct}%</span>
-                  <span>
-                    {splBal ? formatTokenAmount((splBal.uiAmount * sellPct) / 100, splBal.decimals) : "0"}{" "}
-                    {selected?.baseToken.symbol}
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-1">
-                  {[25, 50, 75, 100].map((v) => (
-                    <button key={v} type="button" onClick={() => setSellPct(v)} className="flex-1 rounded-md border border-white/10 py-1 text-[11px] text-slate-400 hover:bg-white/5">{v}%</button>
-                  ))}
-                </div>
+                <input type="range" min={1} max={100} value={sellPct} onChange={(e) => setSellPct(Number(e.target.value))} className="mb-1 w-full" />
+                <div className="mb-2 text-right text-xs text-slate-400">Sell {sellPct}%</div>
               </>
             )}
 
-            <label className="mt-3 block text-[11px] text-slate-400">Slippage (bps)</label>
-            <input type="number" value={slippage} onChange={(e) => setSlippage(Number(e.target.value) || 100)} className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 font-mono text-sm outline-none" />
+            <div className="mb-3 text-xs text-slate-400">Slippage {slippage / 100}%</div>
 
-            <button
-              type="button"
-              disabled={busy || !selected || !connected}
-              onClick={executeSwap}
-              className={`mt-4 w-full rounded-lg py-2.5 text-sm font-bold disabled:opacity-40 ${
-                side === "buy"
-                  ? "bg-gradient-to-r from-[#14F195] to-emerald-400 text-slate-950"
-                  : "bg-rose-500 text-white"
-              }`}
-            >
-              {busy ? "Executing…" : connected ? `${side === "buy" ? "Buy" : "Sell"} ${selected?.baseToken.symbol || "token"}` : "Connect wallet"}
+            <button type="button" disabled={busy || !connected || !selected} onClick={executeSwap} className="w-full rounded-lg bg-gradient-to-r from-[#14F195] to-emerald-400 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">
+              {busy ? "Working…" : side === "buy" ? "Buy with Jupiter" : "Sell with Jupiter"}
             </button>
-            {status && <p className="mt-2 break-all text-[11px] text-slate-400">{status}</p>}
+
+            {status && <p className="mt-2 text-[11px] text-slate-400 break-all">{status}</p>}
           </div>
 
           <Token2022Panel mint={selectedMint} />
