@@ -17,11 +17,15 @@ import { LiveChart } from "@/components/dashboard/LiveChart";
 import { WalletConnectButton } from "@/components/dashboard/WalletConnectButton";
 import { SplHoldings, useSplBalance } from "@/components/dashboard/SplHoldings";
 import { Token2022Panel } from "@/components/dashboard/Token2022Panel";
-import { loadRules, saveRules, toggleManagedMint, type UserRules } from "@/lib/profile";
+import { loadRules, toggleManagedMint, type UserRules } from "@/lib/profile";
+import { TradingFirmEngine } from "@/lib/agents/engine";
+import type { LivePair } from "@/lib/agents/context";
 
 type FirmEvent = { id: string; at: number; agent: string; message: string; level: "info" | "warn" | "success" | "trade" };
 type TradeSide = "buy" | "sell";
 type PayWith = "SOL" | "USDC";
+
+const firmEngine = new TradingFirmEngine();
 
 export function Terminal() {
   const { connection } = useConnection();
@@ -73,7 +77,7 @@ export function Terminal() {
 
   useEffect(() => {
     refreshMarket();
-    const t = setInterval(refreshMarket, 5 * 60 * 1000); // every 5 mins
+    const t = setInterval(refreshMarket, 5 * 60 * 1000);
     return () => clearInterval(t);
   }, [refreshMarket]);
 
@@ -97,30 +101,44 @@ export function Terminal() {
     getTokenDecimals(connection, selectedMint).then(setTokenDecimals);
   }, [connection, selectedMint]);
 
+  // Real live agent pipeline
   useEffect(() => {
     if (!firmOn || !pairs.length) return;
-    const tick = () => {
-      const top = [...pairs]
-        .filter((p) => (p.priceChange?.h1 || 0) > 8 && (p.liquidity?.usd || 0) > 20000)
-        .slice(0, 3);
-      if (!top.length) {
-        pushEvent("Bscoter", "No high-momentum pairs cleared liquidity floor.", "info");
-        return;
-      }
-      const pick = top[Math.floor(Math.random() * top.length)];
-      const score = Math.min(98, 70 + Math.abs(pick.priceChange?.h1 || 0));
-      pushEvent("Analuszer", `${pick.baseToken.symbol} score ${score.toFixed(0)}`, "info");
-      if (score >= 80) {
-        pushEvent("Verdicter", `Mandate SIGNED for ${pick.baseToken.symbol}`, "trade");
-        setSelected(pick);
-      } else {
-        pushEvent("Judge", `${pick.baseToken.symbol} below gate`, "warn");
+
+    const run = async () => {
+      const livePairs: LivePair[] = pairs.slice(0, 20).map((p) => ({
+        symbol: p.baseToken.symbol,
+        mint: p.baseToken.address,
+        priceUsd: parseFloat(p.priceUsd || "0") || 0,
+        liquidityUsd: p.liquidity?.usd || 0,
+        volumeH24: p.volume?.h24 || 0,
+        priceChangeH1: p.priceChange?.h1 || 0,
+        txnsH1: (p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0),
+      }));
+
+      const managed = rules?.managedMints || [];
+      const walletUsd = (solBalance || 0) * 150; // rough SOL price for sizing
+
+      try {
+        const result = await firmEngine.runOnce(livePairs, managed, walletUsd);
+        for (const msg of result.events || []) {
+          const agent = msg.startsWith("[") ? msg.slice(1, msg.indexOf("]")) : "Firm";
+          const level = msg.includes("VETO") || msg.includes("below") ? "warn" : msg.includes("Proposal") ? "trade" : "info";
+          pushEvent(agent, msg, level as any);
+        }
+        if (result.selectedToken && result.executionApproved) {
+          const match = pairs.find((p) => p.baseToken.address === result.selectedToken!.mint);
+          if (match) setSelected(match);
+        }
+      } catch (err: any) {
+        pushEvent("System", `Engine error: ${err?.message}`, "warn");
       }
     };
-    tick();
-    const id = setInterval(tick, 45000);
+
+    run();
+    const id = setInterval(run, 60000); // every 60s when Firm LIVE
     return () => clearInterval(id);
-  }, [firmOn, pairs, pushEvent]);
+  }, [firmOn, pairs, rules, solBalance, pushEvent]);
 
   const onChartTick = useCallback((pair: DexPair) => {
     setPairs((prev) => prev.map((p) => (p.pairAddress === pair.pairAddress ? pair : p)));
@@ -292,7 +310,7 @@ export function Terminal() {
             <a href="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#14F195] to-[#9945FF] text-xs font-bold text-slate-950">JF</a>
             <div>
               <div className="text-sm font-semibold">Jolsel Firm Terminal</div>
-              <div className="text-[10px] uppercase tracking-wider text-slate-500">Token-2022 extensions · SPL · Jupiter</div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">Token-2022 · SPL · Jupiter · Live Agents</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -316,7 +334,7 @@ export function Terminal() {
 
       {!connected && (
         <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-200">
-          Connect wallet to read Token-2022 / SPL balances and trade on mainnet.
+          Connect wallet to read balances and trade on mainnet.
         </div>
       )}
 
@@ -402,7 +420,7 @@ export function Terminal() {
 
           {tab === "firm" && (
             <div className="max-h-[70vh] space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-slate-900/60 p-2">
-              {events.length === 0 && <div className="p-3 text-sm text-slate-500">Enable Firm LIVE.</div>}
+              {events.length === 0 && <div className="p-3 text-sm text-slate-500">Enable Firm LIVE to run real agents.</div>}
               {events.map((ev) => (
                 <div key={ev.id} className="border-b border-white/5 px-2 py-2 text-xs">
                   <span className="font-mono text-[#14F195]">{ev.agent}</span>
@@ -427,7 +445,7 @@ export function Terminal() {
                 }}
               />
               <div className="mt-3 text-[10px] text-slate-500">
-                Managed: {rules?.managedMints.length || 0} tokens. Firm will generate scenarios (stop-loss / take-profit alerts) on next ticks. You still sign all swaps.
+                Managed: {rules?.managedMints.length || 0} tokens. Real agents score them on each Firm tick.
               </div>
             </div>
           )}
