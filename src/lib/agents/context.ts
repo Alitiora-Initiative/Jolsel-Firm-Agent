@@ -1,4 +1,5 @@
 export type AssetClass = "MEME_COIN" | "TOKENIZED_STOCK" | "PERPETUAL";
+export type TradeDirection = "LONG" | "SHORT";
 
 export interface CorporateContext {
   timestamp: number;
@@ -9,6 +10,7 @@ export interface CorporateContext {
   customIndicatorsScore: number;
   socialSentimentScore: number;
   isWorthIt: boolean;
+  tradeDirection: TradeDirection;
   reversalProtectionPlan: any | null;
   riskVetoTriggered: boolean;
   vetoReason: string;
@@ -28,6 +30,7 @@ export function createInitialContext(): CorporateContext {
     customIndicatorsScore: 0,
     socialSentimentScore: 0,
     isWorthIt: false,
+    tradeDirection: "LONG",
     reversalProtectionPlan: null,
     riskVetoTriggered: false,
     vetoReason: "",

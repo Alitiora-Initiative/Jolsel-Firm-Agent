@@ -44,7 +44,7 @@ export function LiveChart({
       }
     };
     poll();
-    const id = setInterval(poll, 4000);
+    const id = setInterval(poll, 1000);
     return () => {
       cancelled = true;
       clearInterval(id);

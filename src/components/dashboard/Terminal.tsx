@@ -49,7 +49,7 @@ export function Terminal() {
   const splBal = useSplBalance(selectedMint);
 
   const pushEvent = useCallback((agent: string, message: string, level: FirmEvent["level"] = "info") => {
-    setEvents((e) => [{ id: `${Date.now()}-${Math.random()}`, at: Date.now(), agent, message, level }, ...e].slice(0, 80));
+    setEvents((e) => [{ id: `${Date.now()}-${Math.random()}`, at: Date.now(), agent, message, level }, ...e]);
   }, []);
 
   const refreshMarket = useCallback(async () => {
@@ -71,7 +71,7 @@ export function Terminal() {
 
   useEffect(() => {
     refreshMarket();
-    const t = setInterval(refreshMarket, 20000);
+    const t = setInterval(refreshMarket, 1000);
     return () => clearInterval(t);
   }, [refreshMarket]);
 
@@ -85,7 +85,7 @@ export function Terminal() {
     connection.getBalance(publicKey!).then((l) => setSolBalance(l / 1e9));
     const bal = setInterval(() => {
       connection.getBalance(publicKey!).then((l) => setSolBalance(l / 1e9));
-    }, 15000);
+    }, 1000);
     return () => clearInterval(bal);
   }, [wallet, connection, publicKey]);
 
@@ -106,16 +106,17 @@ export function Terminal() {
       }
       const pick = top[Math.floor(Math.random() * top.length)];
       const score = Math.min(98, 70 + Math.abs(pick.priceChange?.h1 || 0));
-      pushEvent("Analuszer", `${pick.baseToken.symbol} score ${score.toFixed(0)}`, "info");
+      const direction = (pick.priceChange?.h1 || 0) > 0 ? "LONG" : "SHORT";
+      pushEvent("Analuszer", `${pick.baseToken.symbol} ${direction} · score ${score.toFixed(0)}`, "info");
       if (score >= 80) {
-        pushEvent("Verdicter", `Mandate SIGNED for ${pick.baseToken.symbol}`, "trade");
+        pushEvent("Verdicter", `${direction} Mandate SIGNED for ${pick.baseToken.symbol}`, "trade");
         setSelected(pick);
       } else {
         pushEvent("Judge", `${pick.baseToken.symbol} below gate`, "warn");
       }
     };
     tick();
-    const id = setInterval(tick, 45000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [firmOn, pairs, pushEvent]);
 

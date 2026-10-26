@@ -50,7 +50,7 @@ export function SplHoldings({
   useEffect(() => {
     refresh();
     if (!publicKey) return;
-    const id = setInterval(refresh, 20000);
+    const id = setInterval(refresh, 1000);
     return () => clearInterval(id);
   }, [refresh, publicKey]);
 
