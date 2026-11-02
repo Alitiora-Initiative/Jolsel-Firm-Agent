@@ -8,3 +8,7 @@ dist
 *.log
 .DS_Store
 .vercel
+tsconfig.tsbuildinfo
+target
+anchor/.anchor
+
