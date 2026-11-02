@@ -19,7 +19,14 @@ export function evaluateRisk(input: RiskCheckInput): {
   reason: string | null;
   limits: typeof defaultRiskLimits;
 } {
-  const { liveMode, currentDrawdownPct, dailyLossPct, positionSizePct, walletBalanceUsd, executionApprovedByUser } = input;
+  const {
+    liveMode,
+    currentDrawdownPct,
+    dailyLossPct,
+    positionSizePct,
+    walletBalanceUsd,
+    executionApprovedByUser,
+  } = input;
 
   if (!executionApprovedByUser) {
     return {
