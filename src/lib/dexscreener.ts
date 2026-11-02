@@ -17,35 +17,69 @@ export type DexPair = {
 };
 
 const BASE = "https://api.dexscreener.com";
+const SEARCH_TTL_MS = 20_000;
+const TRENDING_TTL_MS = 30_000;
+
+type CacheEntry<T> = { at: number; value: T };
+const searchCache = new Map<string, CacheEntry<DexPair[]>>();
+const tokenPairsCache = new Map<string, CacheEntry<DexPair[]>>();
+let trendingCache: CacheEntry<DexPair[]> | null = null;
+let trendingInFlight: Promise<DexPair[]> | null = null;
+
+async function fetchJson(url: string, timeoutMs = 7000): Promise<any> {
+  const res = await fetch(url, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`DEX feed ${res.status}`);
+  return res.json();
+}
 
 export async function searchPairs(q: string): Promise<DexPair[]> {
-  const res = await fetch(`${BASE}/latest/dex/search?q=${encodeURIComponent(q)}`, {
-    next: { revalidate: 15 },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.pairs || []).filter((p: DexPair) => p.chainId === "solana");
+  const key = q.trim().toLowerCase();
+  if (!key) return [];
+  const cached = searchCache.get(key);
+  if (cached && Date.now() - cached.at < SEARCH_TTL_MS) return cached.value;
+  try {
+    const data = await fetchJson(`${BASE}/latest/dex/search?q=${encodeURIComponent(key)}`);
+    const pairs = (data.pairs || []).filter((p: DexPair) => p.chainId === "solana");
+    searchCache.set(key, { at: Date.now(), value: pairs });
+    return pairs;
+  } catch {
+    return cached?.value ?? [];
+  }
 }
 
 export async function getTokenPairs(tokenAddress: string): Promise<DexPair[]> {
-  const res = await fetch(`${BASE}/token-pairs/v1/solana/${tokenAddress}`, {
-    next: { revalidate: 10 },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return Array.isArray(data) ? data : data.pairs || [];
+  const cached = tokenPairsCache.get(tokenAddress);
+  if (cached && Date.now() - cached.at < SEARCH_TTL_MS) return cached.value;
+  try {
+    const data = await fetchJson(
+      `${BASE}/token-pairs/v1/solana/${encodeURIComponent(tokenAddress)}`
+    );
+    const pairs: DexPair[] = Array.isArray(data) ? data : data.pairs || [];
+    tokenPairsCache.set(tokenAddress, { at: Date.now(), value: pairs });
+    return pairs;
+  } catch {
+    return cached?.value ?? [];
+  }
 }
 
 export async function getBoostedTokens(): Promise<any[]> {
-  const res = await fetch(`${BASE}/token-boosts/top/v1`, { next: { revalidate: 30 } });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    return await fetchJson(`${BASE}/token-boosts/top/v1`, 8000);
+  } catch {
+    return [];
+  }
 }
 
 export async function getLatestProfiles(): Promise<any[]> {
-  const res = await fetch(`${BASE}/token-profiles/latest/v1`, { next: { revalidate: 30 } });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    return await fetchJson(`${BASE}/token-profiles/latest/v1`, 8000);
+  } catch {
+    return [];
+  }
 }
 
 export async function getTrendingSolana(): Promise<DexPair[]> {
@@ -57,6 +91,17 @@ export async function getTrendingSolana(): Promise<DexPair[]> {
     for (const p of pairs.slice(0, 10)) {
       if (p.chainId !== "solana") continue;
       if (seen.has(p.pairAddress)) continue;
+async function buildTrending(): Promise<DexPair[]> {
+  const queries = ["SOL", "BONK", "WIF", "POPCAT", "FARTCOIN", "PENGU", "TRUMP", "MOODENG"];
+  const results = await Promise.all(queries.map((q) => searchPairs(q)));
+  const all: DexPair[] = [];
+  const seen = new Set<string>();
+
+  for (const pairs of results) {
+    for (const p of pairs.slice(0, 12)) {
+      if (p.chainId !== "solana" || seen.has(p.pairAddress)) continue;
+      if (!p.baseToken?.address || !p.priceUsd) continue;
+      if ((p.liquidity?.usd || 0) < 25_000) continue;
       seen.add(p.pairAddress);
       all.push(p);
     }
@@ -76,6 +121,29 @@ export async function getTrendingSolana(): Promise<DexPair[]> {
       return scoreB - scoreA;
     })
     .slice(0, 40);
+
+  return all
+    .sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+    .slice(0, 50);
+}
+
+export async function getTrendingSolana(): Promise<DexPair[]> {
+  if (trendingCache && Date.now() - trendingCache.at < TRENDING_TTL_MS) {
+    return trendingCache.value;
+  }
+  if (trendingInFlight) return trendingInFlight;
+
+  trendingInFlight = buildTrending()
+    .then((pairs) => {
+      if (pairs.length) trendingCache = { at: Date.now(), value: pairs };
+      return pairs.length ? pairs : trendingCache?.value ?? [];
+    })
+    .catch(() => trendingCache?.value ?? [])
+    .finally(() => {
+      trendingInFlight = null;
+    });
+
+  return trendingInFlight;
 }
 
 export function formatUsd(n?: number | string | null): string {

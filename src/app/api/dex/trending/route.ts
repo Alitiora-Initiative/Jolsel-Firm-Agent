@@ -18,6 +18,6 @@ export async function GET() {
       ts: Date.now(),
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message, pairs: [] }, { status: 500 });
+    return NextResponse.json({ error: e.message, pairs: [] }, { status: 502 });
   }
 }

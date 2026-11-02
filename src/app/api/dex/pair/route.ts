@@ -6,13 +6,16 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const pair = req.nextUrl.searchParams.get("pair");
   const chain = req.nextUrl.searchParams.get("chain") || "solana";
-  if (!pair) {
-    return NextResponse.json({ error: "pair required" }, { status: 400 });
+  if (!pair || pair.length > 64) {
+    return NextResponse.json({ error: "valid pair required" }, { status: 400 });
+  }
+  if (!/^[a-z0-9-]{1,24}$/.test(chain)) {
+    return NextResponse.json({ error: "invalid chain" }, { status: 400 });
   }
   try {
     const res = await fetch(
-      `https://api.dexscreener.com/latest/dex/pairs/${chain}/${pair}`,
-      { cache: "no-store" }
+      `https://api.dexscreener.com/latest/dex/pairs/${chain}/${encodeURIComponent(pair)}`,
+      { cache: "no-store", signal: AbortSignal.timeout(7000) }
     );
     if (!res.ok) {
       return NextResponse.json({ error: `dex ${res.status}` }, { status: 502 });

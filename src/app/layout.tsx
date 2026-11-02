@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Jolsel Firm | Multi-Agent Solana Trading Firm",
   description:
-    "17+ specialized AI agents operating as a unified Solana trading firm — Discovery, Planning, Compliance, Executive & Audit departments.",
+    "17 specialized agents operating as a unified Solana trading desk: live DexScreener data, on-chain mint checks, Jupiter quotes, and wallet-signed swaps.",
   openGraph: {
     title: "Jolsel Firm",
     description: "Multi-Agent Solana Trading Firm",
