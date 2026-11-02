@@ -6,12 +6,14 @@ export function Footer() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-solana-green to-solana-purple text-xs font-bold text-slate-950">JF</div>
           <span className="text-sm text-slate-400">Jolsel Firm · Alitiora Initiative</span>
         </div>
-        <div className="flex gap-6 text-sm text-slate-500">
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-500">
+          <a href="/core" className="hover:text-solana-green transition">Core</a>
+          <a href="/whitepaper" className="hover:text-solana-green transition">Whitepaper</a>
           <a href="https://github.com/Alitiora-Initiative/Jolsel-Firm-Agent" className="hover:text-solana-green transition" target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href="https://github.com/Alitiora-Initiative" className="hover:text-solana-green transition" target="_blank" rel="noopener noreferrer">Organization</a>
         </div>
       </div>
-      <p className="mt-8 text-center text-xs text-slate-600">Not financial advice. Trading involves risk of loss. Agents are experimental.</p>
+      <p className="mt-8 text-center text-xs text-slate-600">Not financial advice. Trading involves risk of loss. Agents are experimental and only propose trades; you sign every transaction.</p>
     </footer>
   );
 }
