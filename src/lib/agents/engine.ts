@@ -1,3 +1,4 @@
+import { createInitialContext, type CorporateContext, type LivePair } from "./context";
 import type { DexPair } from "@/lib/dexscreener";
 import { getTokenPairs, getTrendingSolana } from "@/lib/dexscreener";
 import { getQuote, SOL, summarizeQuote } from "@/lib/jupiter";
@@ -23,6 +24,44 @@ import { Teacher } from "./audit/teacher";
 import { getLedgerStats } from "./audit/ledger";
 import { logAgent } from "./log";
 
+export class TradingFirmEngine {
+  private context: CorporateContext = createInitialContext();
+
+  /** One-shot live run usable from the browser Terminal */
+  async runOnce(livePairs: LivePair[], managedMints: string[] = [], walletUsd = 0): Promise<CorporateContext> {
+    this.context = createInitialContext();
+    this.context.timestamp = Date.now();
+    this.context.walletBalanceUSDT = walletUsd;
+    this.context.managedMints = managedMints;
+    this.context.events = [];
+
+    await Bscoter.scout(this.context, livePairs);
+    await CryptoGuru.analyzeCrowd(this.context);
+    await Analuszer.calculatePrecisionMetrics(this.context);
+
+    if (this.context.selectedToken && this.context.customIndicatorsScore >= 75) {
+      await Forecaster.simulateScenarios(this.context);
+      await LongTermPlanner.routeAssetClass(this.context);
+      await ShortTermPlanner.calculatePyramiding(this.context);
+
+      await Overthinker.simulateTailRisk(this.context);
+      await Reviewer.auditContractSafety(this.context);
+      await MrGrumpy.enforceZeroTolerance(this.context);
+      await RiskManager.verifySurvivalFloor(this.context);
+
+      if (!this.context.riskVetoTriggered) {
+        await Broker.advocateMomentum(this.context);
+        await Judge.aggregateVotes(this.context);
+        await Verdicter.signMandate(this.context);
+        if (this.context.executionApproved) {
+          await Trader.executeAtomicTransaction(this.context);
+          this.context.events.push(`[Trader] Proposal ready for ${this.context.selectedToken.symbol} — user must sign`);
+        }
+      } else {
+        this.context.events.push(`[Pipeline] Vetoed: ${this.context.vetoReason}`);
+      }
+    } else {
+      this.context.events.push("[Pipeline] No candidate cleared score gate");
 export interface FirmRunInput {
   pairs?: DexPair[];
   mint?: string;
@@ -208,5 +247,11 @@ export class TradingFirmEngine {
       }
       await new Promise((resolve) => setTimeout(resolve, this.intervalMs));
     }
+
+    await RecordKeeper.logHeartbeat(this.context);
+    await RecordReviewer.evaluatePerformance();
+    await Teacher.executeDailyAuditQuizzes(this.context);
+
+    return this.context;
   }
 }

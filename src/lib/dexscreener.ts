@@ -82,6 +82,15 @@ export async function getLatestProfiles(): Promise<any[]> {
   }
 }
 
+export async function getTrendingSolana(): Promise<DexPair[]> {
+  const queries = ["SOL", "BONK", "WIF", "POPCAT", "FARTCOIN", "meme", "pump"];
+  const all: DexPair[] = [];
+  const seen = new Set<string>();
+  for (const q of queries) {
+    const pairs = await searchPairs(q);
+    for (const p of pairs.slice(0, 10)) {
+      if (p.chainId !== "solana") continue;
+      if (seen.has(p.pairAddress)) continue;
 async function buildTrending(): Promise<DexPair[]> {
   const queries = ["SOL", "BONK", "WIF", "POPCAT", "FARTCOIN", "PENGU", "TRUMP", "MOODENG"];
   const results = await Promise.all(queries.map((q) => searchPairs(q)));
@@ -97,6 +106,21 @@ async function buildTrending(): Promise<DexPair[]> {
       all.push(p);
     }
   }
+  const MIN_LIQ = 15000;
+  const MIN_VOL_H24 = 8000;
+  const MIN_TXNS = 20;
+  return all
+    .filter((p) =>
+      (p.liquidity?.usd || 0) >= MIN_LIQ &&
+      (p.volume?.h24 || 0) >= MIN_VOL_H24 &&
+      ((p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0)) >= MIN_TXNS
+    )
+    .sort((a, b) => {
+      const scoreA = (a.volume?.h1 || 0) + Math.abs(a.priceChange?.h1 || 0) * 50;
+      const scoreB = (b.volume?.h1 || 0) + Math.abs(b.priceChange?.h1 || 0) * 50;
+      return scoreB - scoreA;
+    })
+    .slice(0, 40);
 
   return all
     .sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
