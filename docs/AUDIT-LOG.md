@@ -140,7 +140,8 @@ workflow runs lint, typecheck, and build only. The working tree that was stashed
 never committed.
 
 Impact: "tests pass" currently means "nothing is tested".
-Status: open — adopt the stashed tests after review.
+Status: fixed on branch `chore/ci-foundation` — `vitest` is now a dev dependency with a
+`test` script; `scoring.test.ts` (11) and `jupiter.test.ts` (3) run in CI.
 
 ### A-10 — Low — Documentation references a missing file
 
@@ -150,6 +151,34 @@ exist in the repository.
 Impact: broken reference.
 Status: open.
 
+### A-11 — Blocker — `origin/main` contains merge-damaged source files
+
+Evidence: on `e9723ef`, `src/lib/agents/engine.ts`, `context.ts`,
+`audit/teacher.ts`, `compliance/riskManager.ts`, `discovery/analuszer.ts`,
+`discovery/bscoter.ts`, and `src/lib/dexscreener.ts` contain duplicated or spliced
+class bodies (the same method defined twice, or a class body resumed after another
+class ends). `next lint` reports six `Parsing error: '}' expected` failures, and
+`src/app/page.tsx` renders `<Header />` without importing it. `tsc --noEmit` cannot
+pass on this tree.
+
+Impact: the default branch cannot build. Any claim that the app runs from `main` is
+false.
+
+Fix: restore the coherent pre-merge tree, then verify `tsc --noEmit`, `next lint`,
+`vitest run`, and `next build` all pass locally before merging.
+Status: fixed on branch `chore/ci-foundation` (repair commit); local verification
+green — typecheck, lint (one non-blocking hook warning), 14 tests, production build.
+
+### A-12 — Medium — Root layout omitted `WalletProvider`
+
+Evidence: `next build` failed prerendering `/treasury` with "You have tried to read
+`publicKey`/`wallet` on a `WalletContext` without providing one"; the provider was
+mounted only in `src/app/dashboard/layout.tsx`.
+
+Fix: mount `WalletProvider` once in `src/app/layout.tsx`; dashboard layout is
+metadata-only.
+Status: fixed on branch `chore/ci-foundation`.
+
 ## Verified during this audit
 
 - `origin/main` head: `e9723ef` (2026-11-02). The shared local clone was 22 commits
@@ -157,6 +186,9 @@ Status: open.
   `wip: local divergence vs origin/main (2026-11-05)` before fast-forwarding, so no work
   was discarded.
 - Repository contains 17 agent classes, 8 API routes, 4 page routes.
+- Repair verification on `chore/ci-foundation` (2026-11-05): `npx tsc --noEmit` exit 0,
+  `npm run lint` exit 0 (one `react-hooks/exhaustive-deps` warning), `npx vitest run`
+  14/14 passed, `npm run build` exit 0 with all 13 routes emitted.
 - Live `https://jolsel-firm.vercel.app/` returns 200 and is the different app described
   in A-06.
 - `package-lock.json` generated from the committed `package.json`; `npm ci` is the CI
@@ -174,3 +206,4 @@ Status: open.
 | Date | Commit | Change |
 | --- | --- | --- |
 | 2026-11-05 | pending | Added `package-lock.json` and `.eslintrc.json`; opened this log. |
+| 2026-11-05 | pending | Repaired merge-damaged agents, restored `Header` import, moved `WalletProvider` to the root layout, adopted vitest suite, added `ES2020` target. |

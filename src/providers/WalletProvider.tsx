@@ -12,10 +12,12 @@ import {
 import { clusterApiUrl } from "@solana/web3.js";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
+/**
+ * Solana mainnet RPC for wallet reads. Public endpoints only (no API key is
+ * ever placed in the browser); override with NEXT_PUBLIC_SOLANA_RPC if needed.
+ */
 const RPC =
-  process.env.NEXT_PUBLIC_SOLANA_RPC ||
-  process.env.NEXT_PUBLIC_HELIUS_RPC ||
-  clusterApiUrl("mainnet-beta");
+  process.env.NEXT_PUBLIC_SOLANA_RPC || clusterApiUrl("mainnet-beta");
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const wallets = useMemo(
