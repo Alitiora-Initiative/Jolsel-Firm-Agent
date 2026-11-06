@@ -19,7 +19,6 @@ import { SplHoldings, useSplBalance } from "@/components/dashboard/SplHoldings";
 import { Token2022Panel } from "@/components/dashboard/Token2022Panel";
 import { loadRules, toggleManagedMint, type UserRules } from "@/lib/profile";
 import { TradingFirmEngine } from "@/lib/agents/engine";
-import type { LivePair } from "@/lib/agents/context";
 
 type FirmEvent = { id: string; at: number; agent: string; message: string; level: "info" | "warn" | "success" | "trade" };
 type TradeSide = "buy" | "sell";
@@ -77,8 +76,7 @@ export function Terminal() {
 
   useEffect(() => {
     refreshMarket();
-    const t = setInterval(refreshMarket, 5 * 60 * 1000);
-    const t = setInterval(refreshMarket, 1000);
+    const t = setInterval(refreshMarket, 15000);
     return () => clearInterval(t);
   }, [refreshMarket]);
 
@@ -107,28 +105,20 @@ export function Terminal() {
     if (!firmOn || !pairs.length) return;
 
     const run = async () => {
-      const livePairs: LivePair[] = pairs.slice(0, 20).map((p) => ({
-        symbol: p.baseToken.symbol,
-        mint: p.baseToken.address,
-        priceUsd: parseFloat(p.priceUsd || "0") || 0,
-        liquidityUsd: p.liquidity?.usd || 0,
-        volumeH24: p.volume?.h24 || 0,
-        priceChangeH1: p.priceChange?.h1 || 0,
-        txnsH1: (p.txns?.h1?.buys || 0) + (p.txns?.h1?.sells || 0),
-      }));
-
-      const managed = rules?.managedMints || [];
-      const walletUsd = (solBalance || 0) * 150; // rough SOL price for sizing
+      const walletUsd = (solBalance || 0) * 150;
 
       try {
-        const result = await firmEngine.runOnce(livePairs, managed, walletUsd);
-        for (const msg of result.events || []) {
-          const agent = msg.startsWith("[") ? msg.slice(1, msg.indexOf("]")) : "Firm";
-          const level = msg.includes("VETO") || msg.includes("below") ? "warn" : msg.includes("Proposal") ? "trade" : "info";
-          pushEvent(agent, msg, level as any);
+        const result = await firmEngine.runOnce({
+          pairs,
+          walletBalanceUsd: walletUsd,
+          walletPublicKey: wallet || undefined,
+        });
+        for (const ev of result.events || []) {
+          const level = ev.level === "veto" || ev.level === "warn" ? "warn" : ev.level === "trade" ? "trade" : ev.level === "success" ? "success" : "info";
+          pushEvent(ev.agent, ev.message, level);
         }
-        if (result.selectedToken && result.executionApproved) {
-          const match = pairs.find((p) => p.baseToken.address === result.selectedToken!.mint);
+        if (result.selected && result.decision.approved) {
+          const match = pairs.find((p) => p.baseToken.address === result.selected!.mint);
           if (match) setSelected(match);
         }
       } catch (err: any) {
@@ -137,30 +127,9 @@ export function Terminal() {
     };
 
     run();
-    const id = setInterval(run, 60000); // every 60s when Firm LIVE
-    const tick = () => {
-      const top = [...pairs]
-        .filter((p) => (p.priceChange?.h1 || 0) > 8 && (p.liquidity?.usd || 0) > 20000)
-        .slice(0, 3);
-      if (!top.length) {
-        pushEvent("Bscoter", "No high-momentum pairs cleared liquidity floor.", "info");
-        return;
-      }
-      const pick = top[Math.floor(Math.random() * top.length)];
-      const score = Math.min(98, 70 + Math.abs(pick.priceChange?.h1 || 0));
-      const direction = (pick.priceChange?.h1 || 0) > 0 ? "LONG" : "SHORT";
-      pushEvent("Analuszer", `${pick.baseToken.symbol} ${direction} · score ${score.toFixed(0)}`, "info");
-      if (score >= 80) {
-        pushEvent("Verdicter", `${direction} Mandate SIGNED for ${pick.baseToken.symbol}`, "trade");
-        setSelected(pick);
-      } else {
-        pushEvent("Judge", `${pick.baseToken.symbol} below gate`, "warn");
-      }
-    };
-    tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(run, 60000);
     return () => clearInterval(id);
-  }, [firmOn, pairs, rules, solBalance, pushEvent]);
+  }, [firmOn, pairs, wallet, solBalance, pushEvent]);
 
   const onChartTick = useCallback((pair: DexPair) => {
     setPairs((prev) => prev.map((p) => (p.pairAddress === pair.pairAddress ? pair : p)));

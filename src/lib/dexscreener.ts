@@ -82,15 +82,6 @@ export async function getLatestProfiles(): Promise<any[]> {
   }
 }
 
-export async function getTrendingSolana(): Promise<DexPair[]> {
-  const queries = ["SOL", "BONK", "WIF", "POPCAT", "FARTCOIN", "meme", "pump"];
-  const all: DexPair[] = [];
-  const seen = new Set<string>();
-  for (const q of queries) {
-    const pairs = await searchPairs(q);
-    for (const p of pairs.slice(0, 10)) {
-      if (p.chainId !== "solana") continue;
-      if (seen.has(p.pairAddress)) continue;
 async function buildTrending(): Promise<DexPair[]> {
   const queries = ["SOL", "BONK", "WIF", "POPCAT", "FARTCOIN", "PENGU", "TRUMP", "MOODENG"];
   const results = await Promise.all(queries.map((q) => searchPairs(q)));
@@ -122,9 +113,6 @@ async function buildTrending(): Promise<DexPair[]> {
     })
     .slice(0, 40);
 
-  return all
-    .sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
-    .slice(0, 50);
 }
 
 export async function getTrendingSolana(): Promise<DexPair[]> {

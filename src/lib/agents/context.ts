@@ -104,10 +104,6 @@ export interface CorporateContext {
   walletBalanceUsd: number;
   walletPublicKey: string | null;
   activeAssetClass: AssetClass;
-  scoutedTokens: LivePair[];
-  selectedToken: LivePair | null;
-  customIndicatorsScore: number;
-  socialSentimentScore: number;
   isWorthIt: boolean;
   tradeDirection: TradeDirection;
   expectedMovePct: number;
@@ -163,8 +159,6 @@ export function createInitialContext(args: {
     vetoReason: "",
     boardroomVotes: {},
     executionApproved: false,
-    learningBias: 0,
-    managedMints: [],
     action: "STAND_ASIDE",
     quote: null,
     quoteResponse: null,
