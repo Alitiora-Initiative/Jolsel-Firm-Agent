@@ -6,6 +6,8 @@ import { Pipeline } from "@/components/Pipeline";
 import { Stack } from "@/components/Stack";
 import { Footer } from "@/components/Footer";
 import { WhitepaperSection } from "@/components/WhitepaperSection";
+import Whitepaper from "@/app/whitepaper";
+import { Header } from "@/components/Header";
 
 export default function Home() {
   return (

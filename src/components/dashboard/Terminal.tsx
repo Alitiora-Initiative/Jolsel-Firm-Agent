@@ -17,6 +17,8 @@ import { LiveChart } from "@/components/dashboard/LiveChart";
 import { WalletConnectButton } from "@/components/dashboard/WalletConnectButton";
 import { SplHoldings, useSplBalance } from "@/components/dashboard/SplHoldings";
 import { Token2022Panel } from "@/components/dashboard/Token2022Panel";
+import { loadRules, toggleManagedMint, type UserRules } from "@/lib/profile";
+import { TradingFirmEngine } from "@/lib/agents/engine";
 
 type FirmEvent = { id: string; at: number; agent: string; message: string; level: "info" | "warn" | "success" | "trade" };
 type TradeSide = "buy" | "sell";
@@ -80,6 +82,7 @@ export function Terminal() {
   useEffect(() => {
     refreshMarket();
     const t = setInterval(refreshMarket, 1000);
+    const t = setInterval(refreshMarket, 15000);
     return () => clearInterval(t);
   }, [refreshMarket]);
 
@@ -129,6 +132,10 @@ export function Terminal() {
   useEffect(() => {
     if (!firmOn) return;
     let alive = true;
+    if (!firmOn || !pairs.length) return;
+
+    const run = async () => {
+      const walletUsd = (solBalance || 0) * 150;
 
     const runFirm = async () => {
       try {
@@ -167,6 +174,18 @@ export function Terminal() {
             setSelected((cur) => (cur?.pairAddress === found.pairAddress ? cur : found));
             setTab("live");
           }
+        const result = await firmEngine.runOnce({
+          pairs,
+          walletBalanceUsd: walletUsd,
+          walletPublicKey: wallet || undefined,
+        });
+        for (const ev of result.events || []) {
+          const level = ev.level === "veto" || ev.level === "warn" ? "warn" : ev.level === "trade" ? "trade" : ev.level === "success" ? "success" : "info";
+          pushEvent(ev.agent, ev.message, level);
+        }
+        if (result.selected && result.decision.approved) {
+          const match = pairs.find((p) => p.baseToken.address === result.selected!.mint);
+          if (match) setSelected(match);
         }
       } catch {
         /* network errors are non-fatal for UI */
@@ -180,6 +199,10 @@ export function Terminal() {
       clearInterval(id);
     };
   }, [firmOn]);
+    run();
+    const id = setInterval(run, 60000);
+    return () => clearInterval(id);
+  }, [firmOn, pairs, wallet, solBalance, pushEvent]);
 
   const onChartTick = useCallback((pair: DexPair) => {
     setPairs((prev) => prev.map((p) => (p.pairAddress === pair.pairAddress ? pair : p)));

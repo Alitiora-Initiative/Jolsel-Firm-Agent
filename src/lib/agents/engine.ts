@@ -208,5 +208,6 @@ export class TradingFirmEngine {
       }
       await new Promise((resolve) => setTimeout(resolve, this.intervalMs));
     }
+
   }
 }

@@ -117,9 +117,6 @@ async function buildTrending(): Promise<DexPair[]> {
     }
   }
 
-  return all
-    .sort((a, b) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
-    .slice(0, 50);
 }
 
 export async function getTrendingSolana(): Promise<DexPair[]> {
