@@ -2,7 +2,14 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { inspectToken2022 } from "@/lib/token2022";
 import type { SafetyReport } from "./context";
 
+/**
+ * Solana RPC for on-chain mint safety reads. The firm desk is self-custody, so
+ * reads target Solana mainnet. A dedicated mainnet RPC (Helius etc.) is preferred
+ * via SOLANA_RPC_MAINNET or SOLANA_RPC_URL (server-only); the public mainnet-beta
+ * endpoint is the fallback. No API key or query string is logged.
+ */
 const RPC =
+  process.env.SOLANA_RPC_MAINNET ||
   process.env.SOLANA_RPC_URL ||
   process.env.NEXT_PUBLIC_SOLANA_RPC ||
   "https://api.mainnet-beta.solana.com";

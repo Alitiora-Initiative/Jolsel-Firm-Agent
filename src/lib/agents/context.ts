@@ -81,16 +81,6 @@ export interface BoardVote {
   weight: number;
 }
 
-export interface LivePair {
-  symbol: string;
-  mint: string;
-  priceUsd: number;
-  liquidityUsd: number;
-  volumeH24: number;
-  priceChangeH1: number;
-  txnsH1: number;
-}
-
 export interface CorporateContext {
   runId: string;
   timestamp: number;

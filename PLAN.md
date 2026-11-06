@@ -40,6 +40,14 @@ Suggested additional agents:
 - [ ] GitHub Actions: lint, typecheck, build (error = 0)  
 - [ ] Ubuntu systemd service or Docker Compose for 24/7 runner  
 
+## 7. Mainnet Readiness (current slice)
+
+- [ ] RPC moved to Solana mainnet: dedicated mainnet RPC (Helius) via server env (`SOLANA_RPC_MAINNET` / `SOLANA_RPC_URL`), public mainnet fallback (`NEXT_PUBLIC_SOLANA_RPC`) — done in code, pending Vercel env + live verification.  
+- [ ] Formal audit before any real-funds execution (see `docs/MAINNET-MIGRATION-GUIDE.md`).  
+- [ ] Squads v4 treasury / upgrade-authority multisig before real fund movement.  
+- [ ] Fee caps / MEV protection before mainnet buys.  
+- [ ] Pyth SOL/USD feed pinning on mainnet before mainnet quotes.  
+
 ## 5. Deployment Flow
 
 1. Push to `main` on GitHub (`Alitiora-Initiative/Jolsel-Firm-Agent`)  
